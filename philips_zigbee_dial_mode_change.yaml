@@ -1,0 +1,54 @@
+blueprint:
+  name: Philips Tap Dial - Mode Change
+  description: |
+    A blueprint to move to the next element of an input_select when the dial is rotated.
+  domain: automation
+  input:
+    mode_button_entity:
+      name: Mode Button
+      description: "The entity ID of the button which can trigger change mode."
+      selector:
+        entity:
+          domain: input_button
+    scroll_direction_entity:
+      name: Change Helper
+      description: "The entity ID of the number helper which will trigger the change."
+      selector:
+        entity:
+          domain: input_number
+    select_entity:
+      name: Select Entity
+      description: "The entity ID of the input_select to move to the next element."
+      selector:
+        entity:
+          domain: input_select
+    change_tap_timeout:
+      name: Action Timeout
+      description: "The timeout in seconds to consider a mode change."
+      default: 2
+      selector:
+        number:
+          min: 1
+          max: 10.0
+          step: 1
+
+trigger:
+  - platform: state
+    entity_id: !input scroll_direction_entity
+
+variables:
+  scroll_direction_entity: !input scroll_direction_entity
+  mode_button_entity: !input mode_button_entity
+  select_entity: !input select_entity
+  change_tap_timeout: !input change_tap_timeout
+
+condition:
+  - condition: template
+    value_template: "{{ states.input_number[scroll_direction_entity.split('.')[1]].last_updated | as_timestamp - states.input_button[mode_button_entity.split('.')[1]].last_changed | as_timestamp  <= change_tap_timeout }}"
+
+action:
+  - service: input_select.select_next
+    target:
+      entity_id: !input select_entity
+
+

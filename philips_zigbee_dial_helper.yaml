@@ -51,12 +51,19 @@ blueprint:
           domain:
           - input_number
     rotary_direction:
-      name: Rotary Direction
-      description: The direction in which the wheel last spun. This is a number helper, with 0 = left and 1 = right.
+      name: Rotary Value
+      description: The last value of the rotation of the device. If this value is positive, the wheel spun right. Otherwise, it spun left.
       selector:
         entity:
           domain:
           - input_number
+    rotary_updated:
+      name: Rotary Updated
+      description: A helper which keeps track of when the rotary dial was last spun. You can then use this in automations. 
+      selector:
+        entity:
+          domain:
+          - input_datetime
     dim_scale:
       name: Rotary Scale
       description: Scale factor for the rotary scale. This value will be multiplied by the value given from the dial. So lower number, finer increments. Larger number, coarser increments.
@@ -75,6 +82,7 @@ variables:
   third_button: !input third_button
   forth_button: !input forth_button
   rotary_value: !input rotary_value
+  rotary_updated: !input rotary_updated
   rotary_direction: !input rotary_direction
   dim_scale: !input dim_scale
 trigger:
@@ -142,7 +150,12 @@ action:
       target:
         entity_id: !input rotary_direction
       data:
-        value: 1
+        value: "{{ (step_size * dim_scale) }}"
+    - service: input_datetime.set_datetime
+      target:
+        entity_id: !input rotary_updated
+      data:
+        datetime: "{{ now() }}"
   - conditions:
     - '{{ command == ''step_with_on_off'' }}'
     - '{{ step_mode == ''StepMode.Down'' }}'
@@ -161,4 +174,9 @@ action:
       target:
         entity_id: !input rotary_direction
       data:
-        value: 0
+        value: "{{ -(step_size * dim_scale) }}"
+    - service: input_datetime.set_datetime
+      target:
+        entity_id: !input rotary_updated
+      data:
+        datetime: "{{ now() }}"
